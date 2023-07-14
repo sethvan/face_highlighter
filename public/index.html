@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>STL Face Highlighter</title>
+</head>
+
+   <style>
+      canvas { border: 1px solid #ccc; }
+      .canvas-inputs { margin-top: 10px; }
+   </style>
+   <body>
+      <canvas id="myCanvas" width="1000" height="800 
+      "></canvas>
+      <div>
+         <div class="canvas-inputs" > 
+            <label for="file-input">STL File: </label> 
+            <input type="file" id="file-input" > 
+         </div>
+         <div class="canvas-inputs" > 
+            <label for="tolerance">Tolerance: </label> 
+            <input type="number" min="1.0" max="90.0" step="0.1" value="5.0" id="tolerance"> 
+         </div>
+         <div class="canvas-inputs" > 
+            <button type="reset" id="reset-selection" >Reset Selection</button> 
+         </div>
+         <div class="canvas-inputs" > 
+            <button for="selection-input" id="save-selection-button" >Save current selection as</button> 
+            <input type="text" id="selection-name-input" placeholder="Selection Name"> 
+         </div> 
+         <div class="canvas-inputs">
+            <button for="selection-dropdown" id="selection-dropdown-button">Display a Selection</button>
+            <select id="selection-dropdown" aria-label="Available Selections"></select>
+         </div> 
+         <div class="canvas-inputs">
+            <button id="default-position-button">Re-position to default view</button>
+         </div> 
+         
+
+         
+
+      </div>
+      
+      
+      <script src="canvas.js"></script>
+      <script type="module" src="../main.js"></script>
+   </body>
+</html>
