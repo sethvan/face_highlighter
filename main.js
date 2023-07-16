@@ -196,12 +196,18 @@ const selectionDropdown = document.getElementById("selection-dropdown");
 const defaultPositionButton = document.getElementById(
   "default-position-button"
 );
-selectionNameInput.addEventListener("focus", function () {
+
+const handleInputFocus = function () {
   nameInputIsFocused = true;
-});
-selectionNameInput.addEventListener("blur", function () {
+};
+const handleInputBlur = function () {
   nameInputIsFocused = false;
-});
+};
+selectionNameInput.addEventListener("focus", handleInputFocus);
+selectionNameInput.addEventListener("blur", handleInputBlur);
+toleranceInput.addEventListener("focus", handleInputFocus);
+toleranceInput.addEventListener("blur", handleInputBlur);
+
 defaultPositionButton.addEventListener("click", function () {
   Rotator.xChange = 0;
   Rotator.yChange = 0;
