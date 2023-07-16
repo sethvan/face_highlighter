@@ -97,18 +97,6 @@ const keys = {
   e: false,
 };
 
-function handleKeyDown(event) {
-  if (keys.hasOwnProperty(event.key)) {
-    keys[event.key] = true;
-  }
-}
-
-function handleKeyUp(event) {
-  if (keys.hasOwnProperty(event.key)) {
-    keys[event.key] = false;
-  }
-}
-
 const Rotator = {
   xChange: 0,
   yChange: 0,
@@ -189,8 +177,6 @@ export {
   loadImage,
   generateTexture,
   keys,
-  handleKeyDown,
-  handleKeyUp,
   Rotator,
   saveSelection,
   Translator,

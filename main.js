@@ -21,8 +21,6 @@ import {
   loadImage,
   generateTexture,
   keys,
-  handleKeyDown,
-  handleKeyUp,
   Rotator,
   saveSelection,
   Translator,
@@ -34,6 +32,21 @@ import { PickingTexture } from "./pickingTexture.js";
 
 //#region Set up keys for moving and mouse stuff for picking
 
+let nameInputIsFocused = false;
+function handleKeyDown(event) {
+  if (!nameInputIsFocused) {
+    if (keys.hasOwnProperty(event.key)) {
+      keys[event.key] = true;
+    }
+  }
+}
+function handleKeyUp(event) {
+  if (!nameInputIsFocused) {
+    if (keys.hasOwnProperty(event.key)) {
+      keys[event.key] = false;
+    }
+  }
+}
 let leftMouseButtonIsPressed = false;
 let cursorX = 0;
 let cursorY = 0;
@@ -183,7 +196,13 @@ const selectionDropdown = document.getElementById("selection-dropdown");
 const defaultPositionButton = document.getElementById(
   "default-position-button"
 );
-defaultPositionButton.addEventListener("click", function (event) {
+selectionNameInput.addEventListener("focus", function () {
+  nameInputIsFocused = true;
+});
+selectionNameInput.addEventListener("blur", function () {
+  nameInputIsFocused = false;
+});
+defaultPositionButton.addEventListener("click", function () {
   Rotator.xChange = 0;
   Rotator.yChange = 0;
   Translator.xChange = 0;
@@ -293,7 +312,6 @@ fileInput.addEventListener("change", async (event) => {
         );
 
         if (leftMouseButtonIsPressed) {
-          console.log(pLoader.on);
           pickingTexture.enableWriting(gl);
           gl.clearBufferuiv(gl.COLOR, 0, [0, 0, 0, 1]);
           gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -314,7 +332,6 @@ fileInput.addEventListener("change", async (event) => {
               (cursorY * gl.canvas.height) / gl.canvas.clientHeight -
               1
           );
-          console.log("vertexID: ", vertexId);
 
           if (vertexId && vertexId < indices.length) {
             faces = pLoader.calcCurrentFaces(
