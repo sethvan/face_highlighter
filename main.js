@@ -3,8 +3,6 @@ const gl = document
   .getContext("webgl2", { preserveDrawingBuffer: true });
 const canvas = document.getElementById("myCanvas");
 const ext = gl.getExtension("OES_element_index_uint");
-gl.clearColor(0.34, 0.425, 0.6, 5);
-gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
 //#region Imports
 
@@ -76,6 +74,7 @@ const uniformProjection = gl.getUniformLocation(mainProgram, "projection");
 const uniformView = gl.getUniformLocation(mainProgram, "view");
 const uniformEyePosition = gl.getUniformLocation(mainProgram, "eyePosition");
 
+// Material uniforms
 const uniformSpecularIntensity = gl.getUniformLocation(
   mainProgram,
   "material.specularIntensity"
@@ -85,6 +84,7 @@ const uniformShininess = gl.getUniformLocation(
   "material.shininess"
 );
 
+//Directional light uniforms
 const uniformDirectionalLightAmbientColour = gl.getUniformLocation(
   mainProgram,
   "directionalLight.base.colour"
@@ -102,6 +102,7 @@ const uniformDirectionalLightDirection = gl.getUniformLocation(
   "directionalLight.direction"
 );
 
+//Point light uniforms
 const uniformPointLightAmbientColour = gl.getUniformLocation(
   mainProgram,
   "pointLight.base.colour"
@@ -150,6 +151,7 @@ const useLights = () => {
   gl.uniform1f(uniformPointLightExponent, 0.1);
 };
 
+//Picking shader and picking uniforms
 const pickingProgram = createShaderProgram(
   gl,
   pickingVertexShaderSrc,
@@ -193,6 +195,8 @@ const mainTexImage = await loadImage("../res/textures/Solid_silver.png");
 const mainTexture = generateTexture(gl, mainTexImage, 200, 200);
 const selectionTexImage = await loadImage("../res/textures/yellow.png");
 const selectionTexture = generateTexture(gl, selectionTexImage, 1200, 900);
+gl.clearColor(0.34, 0.425, 0.6, 5);
+gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
 //#endregion
 
@@ -208,7 +212,8 @@ fileInput.addEventListener("change", async (event) => {
     const fileContentAsArray = new Uint8Array(fileContent);
 
     try {
-      // Pass file contents to C++ class constructor
+      // Pass file contents to C++ class constructor, pLoader loads model using assimp in emscripten
+      // ..and uses glm to calculate vertices for picked faces.
       const pLoader = await new Module.PickLoader(fileContentAsArray);
 
       const indices = pLoader.indices;
@@ -218,20 +223,8 @@ fileInput.addEventListener("change", async (event) => {
       const numTriangles = pLoader.numTriangles;
 
       const vao = createVao(gl, indices, vertices);
-
       const pickingTexture = new PickingTexture();
       pickingTexture.init(gl, 1000, 800);
-
-      const projection = mat4.create();
-      mat4.perspective(
-        projection,
-        45.0 / 57.29578,
-        gl.canvas.width / gl.canvas.height,
-        0.1,
-        100.0
-      );
-
-      const view = mat4.create();
 
       let deltaTime = 0;
       let lastTime = 0;
@@ -262,6 +255,15 @@ fileInput.addEventListener("change", async (event) => {
         }
       });
 
+      const projection = mat4.create();
+      mat4.perspective(
+        projection,
+        45.0 / 57.29578,
+        gl.canvas.width / gl.canvas.height,
+        0.1,
+        100.0
+      );
+
       const draw = () => {
         requestAnimationFrame(draw);
         const now = performance.now();
@@ -272,8 +274,8 @@ fileInput.addEventListener("change", async (event) => {
         Scalar.updateScaling(deltaTime);
 
         const model = mat4.create();
-        mat4.rotateY(model, model, Rotator.yChange);
         mat4.rotateX(model, model, Rotator.xChange);
+        mat4.rotateY(model, model, Rotator.yChange);
         mat4.scale(model, model, [Scalar.factor, Scalar.factor, Scalar.factor]);
         mat4.scale(model, model, [
           initialScaleFactor,
@@ -281,6 +283,8 @@ fileInput.addEventListener("change", async (event) => {
           initialScaleFactor,
         ]);
         mat4.translate(model, model, [-center[0], -center[1], -center[2]]);
+
+        const view = mat4.create();
         mat4.lookAt(
           view,
           [Translator.xChange, Translator.yChange, 3],
@@ -289,6 +293,7 @@ fileInput.addEventListener("change", async (event) => {
         );
 
         if (leftMouseButtonIsPressed) {
+          console.log(pLoader.on);
           pickingTexture.enableWriting(gl);
           gl.clearBufferuiv(gl.COLOR, 0, [0, 0, 0, 1]);
           gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -302,27 +307,26 @@ fileInput.addEventListener("change", async (event) => {
           gl.bindVertexArray(null);
           pickingTexture.disableWriting(gl);
 
-          const drawIndex = pickingTexture.readPixel(
+          const vertexId = pickingTexture.readPixel(
             gl,
             (cursorX * gl.canvas.width) / gl.canvas.clientWidth,
             gl.canvas.height -
               (cursorY * gl.canvas.height) / gl.canvas.clientHeight -
               1
           );
+          console.log("vertexID: ", vertexId);
 
-          if (drawIndex && drawIndex < indices.length) {
+          if (vertexId && vertexId < indices.length) {
             faces = pLoader.calcCurrentFaces(
-              drawIndex,
+              vertexId,
               parseFloat(toleranceInput.value)
             );
           }
         } else {
-          pLoader.on = false; // for de-selecting / re-selecting, used by the c++ class
+          pLoader.on = false; // for de-selecting / re-selecting
         }
 
-        // gl.clearColor(0.68, 0.85, 1.2, 5);
         gl.clearColor(0.34, 0.425, 0.6, 5);
-        // gl.clearColor(0.113333333, 0.141666667, 0.15, 5);
         gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
         gl.useProgram(mainProgram);
@@ -331,7 +335,12 @@ fileInput.addEventListener("change", async (event) => {
         gl.uniformMatrix4fv(uniformView, false, view);
         gl.uniformMatrix4fv(uniformProjection, false, projection);
         gl.uniformMatrix4fv(uniformModel, false, model);
-        gl.uniform3f(uniformEyePosition, 0.0, 0.0, 3.0);
+        gl.uniform3f(
+          uniformEyePosition,
+          Translator.xChange,
+          Translator.yChange,
+          3.0
+        );
         useLights();
 
         // render picked faces
@@ -345,7 +354,7 @@ fileInput.addEventListener("change", async (event) => {
               gl.TRIANGLES,
               faces.counts[i++],
               gl.UNSIGNED_INT,
-              index * 4
+              index * 4 // because of data size, 4 is the stride
             );
           }
           gl.bindVertexArray(null);

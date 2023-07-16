@@ -6,11 +6,11 @@ uniform mat4 model;
 uniform mat4 projection;    
 uniform mat4 view; 
 
-flat out uint myPrimitiveID;
+flat out uint myVertexID;
                                                                               
 void main()                                                                   
 {
-    myPrimitiveID = uint(gl_VertexID);
+    myVertexID = uint(gl_VertexID);
     gl_Position = projection * view * model * vec4( pos, 1.0 );                      
 }
 
@@ -18,12 +18,12 @@ void main()
 
 const pickingFragmentShaderSrc = `#version 300 es
 
-flat in uint myPrimitiveID;
+flat in uint myVertexID;
 out uvec4 FragColor;
 
 void main()
 {
-   FragColor = uvec4(myPrimitiveID, 0, 0, 0);
+   FragColor = uvec4(myVertexID, 0, 0, 0);
 }`;
 
 export { pickingFragmentShaderSrc, pickingVertexShaderSrc };
