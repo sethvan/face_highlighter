@@ -274,8 +274,8 @@ fileInput.addEventListener("change", async (event) => {
         Scalar.updateScaling(deltaTime);
 
         const model = mat4.create();
-        mat4.rotateX(model, model, Rotator.xChange);
         mat4.rotateY(model, model, Rotator.yChange);
+        mat4.rotateX(model, model, Rotator.xChange);
         mat4.scale(model, model, [Scalar.factor, Scalar.factor, Scalar.factor]);
         mat4.scale(model, model, [
           initialScaleFactor,
