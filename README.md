@@ -9,7 +9,11 @@ That same C++ class also uses assimp to load the file which is passed to it as a
 
 Still evolving this while getting the bugs out. The video begins demoing viewer and then demos the picking.  
 
-https://github.com/sethvan/face_highlighter/assets/78233173/333ea123-0c86-4fda-abe4-444340e2eb13
+https://github.com/sethvan/face_highlighter/assets/78233173/9ed3a593-ab67-4b79-9c2b-e25386bf4596
+
+
+
+
 
 
 
