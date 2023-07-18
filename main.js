@@ -25,13 +25,14 @@ import {
   saveSelection,
   Translator,
   Scalar,
+  setToDefaultPosition,
 } from "./funcs.js";
 import { PickingTexture } from "./pickingTexture.js";
 
 //#endregion
 
 //#region Set up keys for moving and mouse stuff for picking
-
+let instance = 0;
 let nameInputIsFocused = false;
 function handleKeyDown(event) {
   if (!nameInputIsFocused) {
@@ -208,13 +209,7 @@ selectionNameInput.addEventListener("blur", handleInputBlur);
 toleranceInput.addEventListener("focus", handleInputFocus);
 toleranceInput.addEventListener("blur", handleInputBlur);
 
-defaultPositionButton.addEventListener("click", function () {
-  Rotator.xChange = 0;
-  Rotator.yChange = 0;
-  Translator.xChange = 0;
-  Translator.yChange = 0;
-  Scalar.factor = 1;
-});
+defaultPositionButton.addEventListener("click", setToDefaultPosition);
 
 const mainTexImage = await loadImage("../res/textures/Solid_silver.png");
 const mainTexture = generateTexture(gl, mainTexImage, 200, 200);
@@ -226,9 +221,15 @@ gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 //#endregion
 
 //#region Load and render STL file
-fileInput.addEventListener("change", async (event) => {
-  event.preventDefault();
+fileInput.addEventListener("click", function (event) {
+  if (instance++) {
+    alert("Please refresh page before loading another STL file");
+    event.preventDefault();
+    return;
+  }
+});
 
+fileInput.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   const reader = new FileReader();
 
@@ -251,6 +252,7 @@ fileInput.addEventListener("change", async (event) => {
       const pickingTexture = new PickingTexture();
       pickingTexture.init(gl, 1000, 800);
 
+      setToDefaultPosition();
       let deltaTime = 0;
       let lastTime = 0;
       let selections = {};

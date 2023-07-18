@@ -171,6 +171,14 @@ function saveSelection(
   }
 }
 
+const setToDefaultPosition = function () {
+  Rotator.xChange = 0;
+  Rotator.yChange = 0;
+  Translator.xChange = 0;
+  Translator.yChange = 0;
+  Scalar.factor = 1;
+}
+
 export {
   createShaderProgram,
   createVao,
@@ -181,4 +189,5 @@ export {
   saveSelection,
   Translator,
   Scalar,
+  setToDefaultPosition
 };
