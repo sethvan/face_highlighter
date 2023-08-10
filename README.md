@@ -1,4 +1,5 @@
 # face_highlighter
+
 WebGL app for selecting and highlighting faces of models in STL format
 
 It is meant to be integrated into a friend's tool. It will be used to select and save faces of 3D models of STL file format. I originally did this in OpenGL and then using google I redid it in WebGL as friend needs it for a browser based tool.  
@@ -7,15 +8,17 @@ Instead of doing everything in JavaScript though I learned enough emscripten to 
 
 That same C++ class also uses assimp to load the file which is passed to it as an array from a FileReader in JavaScript. I may change this though as assimp in emscripten does not seem to like binary stl files that are roughly a million triangles or more ( in my code anyways ), and I may checkout how threejs loads them.  
 
-Still evolving this while getting the bugs out. The video begins demoing viewer and then demos the picking.  
+Still evolving this while getting the bugs out. The video begins demoing viewer and then demos the picking.
+
+For time being, only keys are being used to re-position model.
+Arrow keys for rotating.
+'q' makes model larger
+'e' makes model smaller
+'w' lowers the model on the y axis
+'s' elevates the model on the y axis
+'a' moves model right
+'d' moves model left
+
+
 
 https://github.com/sethvan/face_highlighter/assets/78233173/9ed3a593-ab67-4b79-9c2b-e25386bf4596
-
-
-
-
-
-
-
-
-
