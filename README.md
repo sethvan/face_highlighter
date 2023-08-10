@@ -10,14 +10,14 @@ That same C++ class also uses assimp to load the file which is passed to it as a
 
 Still evolving this while getting the bugs out. The video begins demoing viewer and then demos the picking.
 
-For time being, only keys are being used to re-position model.
-Arrow keys for rotating.
-'q' makes model larger
-'e' makes model smaller
-'w' lowers the model on the y axis
-'s' elevates the model on the y axis
-'a' moves model right
-'d' moves model left
+For time being, only keys are being used to re-position model:  
+* Arrow keys for rotating.  
+* 'q' makes model larger  
+* 'e' makes model smaller  
+* 'w' lowers the model  
+* 's' elevates the model  
+* 'a' moves model right  
+* 'd' moves model left
 
 
 
