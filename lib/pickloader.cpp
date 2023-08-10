@@ -19,11 +19,6 @@ PickLoader::PickLoader( const std::string& stl_file_content )
     on = true;
     groupId = 0;
     printf( "PickLoader constructor finished!\n" );
-    for ( size_t i = 0; i < 2000; ++i )
-    {
-        std::cout << mesh_arrays.front().indices[ i ] << ", ";
-    }
-    puts( "" );
 }
 
 seth_tl::Point PickLoader::getModelCenter() const
