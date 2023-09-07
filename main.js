@@ -28,6 +28,7 @@ import {
   setToDefaultPosition,
 } from "./funcs.js";
 import { PickingTexture } from "./pickingTexture.js";
+import Module from "./public/module.js";
 
 //#endregion
 
@@ -233,171 +234,177 @@ fileInput.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   const reader = new FileReader();
 
-  reader.onload = async (event) => {
+  reader.onload = (event) => {
     const fileContent = event.target.result;
     const fileContentAsArray = new Uint8Array(fileContent);
 
-    try {
-      // Pass file contents to C++ class constructor, pLoader loads model using assimp in emscripten
-      // ..and uses glm to calculate vertices for picked faces.
-      const pLoader = await new Module.PickLoader(fileContentAsArray);
+    Module().then(async (Module) => {
+      try {
+        // Pass file contents to C++ class constructor, pLoader loads model using assimp in emscripten
+        // ..and uses glm to calculate vertices for picked faces.
+        const pLoader = await new Module.PickLoader(fileContentAsArray);
 
-      const indices = pLoader.indices;
-      const vertices = pLoader.vertices;
-      const center = pLoader.model_center;
-      const initialScaleFactor = pLoader.scaleFactor;
-      const numTriangles = pLoader.numTriangles;
+        const indices = pLoader.indices;
+        const vertices = pLoader.vertices;
+        const center = pLoader.model_center;
+        const initialScaleFactor = pLoader.scaleFactor;
+        const numTriangles = pLoader.numTriangles;
 
-      const vao = createVao(gl, indices, vertices);
-      const pickingTexture = new PickingTexture();
-      pickingTexture.init(gl, 1000, 800);
+        const vao = createVao(gl, indices, vertices);
+        const pickingTexture = new PickingTexture();
+        pickingTexture.init(gl, 1000, 800);
 
-      setToDefaultPosition();
-      let deltaTime = 0;
-      let lastTime = 0;
-      let selections = {};
-      let faces = {};
-      selectionDropdown.innerHTML = "";
+        setToDefaultPosition();
+        let deltaTime = 0;
+        let lastTime = 0;
+        let selections = {};
+        let faces = {};
+        selectionDropdown.innerHTML = "";
 
-      resetSelectionButton.addEventListener("click", function () {
-        pLoader.clearSelection();
-        faces = {};
-      });
-
-      saveSelectionButton.addEventListener("click", function () {
-        const selectionName = selectionNameInput.value;
-        if (selectionName.length) {
-          saveSelection(selections, selectionDropdown, faces, selectionName);
-        }
-        selectionNameInput.value = "";
-        faces = {};
-        pLoader.clearSelection();
-      });
-
-      displaySelectionButton.addEventListener("click", function () {
-        const selectionName = selectionDropdown.value;
-        if (selectionName.length) {
-          faces = selections[selectionName];
+        resetSelectionButton.addEventListener("click", function () {
           pLoader.clearSelection();
-        }
-      });
+          faces = {};
+        });
 
-      const projection = mat4.create();
-      mat4.perspective(
-        projection,
-        45.0 / 57.29578,
-        gl.canvas.width / gl.canvas.height,
-        0.1,
-        100.0
-      );
+        saveSelectionButton.addEventListener("click", function () {
+          const selectionName = selectionNameInput.value;
+          if (selectionName.length) {
+            saveSelection(selections, selectionDropdown, faces, selectionName);
+          }
+          selectionNameInput.value = "";
+          faces = {};
+          pLoader.clearSelection();
+        });
 
-      const draw = () => {
-        requestAnimationFrame(draw);
-        const now = performance.now();
-        deltaTime = now - lastTime;
-        lastTime = now;
-        Rotator.updateRotation(deltaTime);
-        Translator.updateTranslation(deltaTime);
-        Scalar.updateScaling(deltaTime);
+        displaySelectionButton.addEventListener("click", function () {
+          const selectionName = selectionDropdown.value;
+          if (selectionName.length) {
+            faces = selections[selectionName];
+            pLoader.clearSelection();
+          }
+        });
 
-        const model = mat4.create();
-        mat4.rotateY(model, model, Rotator.yChange);
-        mat4.rotateX(model, model, Rotator.xChange);
-        mat4.scale(model, model, [Scalar.factor, Scalar.factor, Scalar.factor]);
-        mat4.scale(model, model, [
-          initialScaleFactor,
-          initialScaleFactor,
-          initialScaleFactor,
-        ]);
-        mat4.translate(model, model, [-center[0], -center[1], -center[2]]);
-
-        const view = mat4.create();
-        mat4.lookAt(
-          view,
-          [Translator.xChange, Translator.yChange, 3],
-          [Translator.xChange, Translator.yChange, 0],
-          [0, 1, 0]
+        const projection = mat4.create();
+        mat4.perspective(
+          projection,
+          45.0 / 57.29578,
+          gl.canvas.width / gl.canvas.height,
+          0.1,
+          100.0
         );
 
-        if (leftMouseButtonIsPressed) {
-          pickingTexture.enableWriting(gl);
-          gl.clearBufferuiv(gl.COLOR, 0, [0, 0, 0, 1]);
-          gl.clear(gl.DEPTH_BUFFER_BIT);
-          gl.useProgram(pickingProgram);
+        const draw = () => {
+          requestAnimationFrame(draw);
+          const now = performance.now();
+          deltaTime = now - lastTime;
+          lastTime = now;
+          Rotator.updateRotation(deltaTime);
+          Translator.updateTranslation(deltaTime);
+          Scalar.updateScaling(deltaTime);
+
+          const model = mat4.create();
+          mat4.rotateY(model, model, Rotator.yChange);
+          mat4.rotateX(model, model, Rotator.xChange);
+          mat4.scale(model, model, [
+            Scalar.factor,
+            Scalar.factor,
+            Scalar.factor,
+          ]);
+          mat4.scale(model, model, [
+            initialScaleFactor,
+            initialScaleFactor,
+            initialScaleFactor,
+          ]);
+          mat4.translate(model, model, [-center[0], -center[1], -center[2]]);
+
+          const view = mat4.create();
+          mat4.lookAt(
+            view,
+            [Translator.xChange, Translator.yChange, 3],
+            [Translator.xChange, Translator.yChange, 0],
+            [0, 1, 0]
+          );
+
+          if (leftMouseButtonIsPressed) {
+            pickingTexture.enableWriting(gl);
+            gl.clearBufferuiv(gl.COLOR, 0, [0, 0, 0, 1]);
+            gl.clear(gl.DEPTH_BUFFER_BIT);
+            gl.useProgram(pickingProgram);
+            gl.enable(gl.DEPTH_TEST);
+            gl.uniformMatrix4fv(pickingUniformView, false, view);
+            gl.uniformMatrix4fv(pickingUniformProjection, false, projection);
+            gl.uniformMatrix4fv(pickingUniformModel, false, model);
+            gl.bindVertexArray(vao);
+            gl.drawElements(gl.TRIANGLES, numTriangles, gl.UNSIGNED_INT, 0);
+            gl.bindVertexArray(null);
+            pickingTexture.disableWriting(gl);
+
+            const vertexId = pickingTexture.readPixel(
+              gl,
+              (cursorX * gl.canvas.width) / gl.canvas.clientWidth,
+              gl.canvas.height -
+                (cursorY * gl.canvas.height) / gl.canvas.clientHeight -
+                1
+            );
+
+            if (vertexId && vertexId < indices.length) {
+              faces = pLoader.calcCurrentFaces(
+                vertexId,
+                parseFloat(toleranceInput.value)
+              );
+            }
+          } else {
+            pLoader.on = false; // for de-selecting / re-selecting
+          }
+
+          gl.clearColor(0.34, 0.425, 0.6, 5);
+          gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+
+          gl.useProgram(mainProgram);
           gl.enable(gl.DEPTH_TEST);
-          gl.uniformMatrix4fv(pickingUniformView, false, view);
-          gl.uniformMatrix4fv(pickingUniformProjection, false, projection);
-          gl.uniformMatrix4fv(pickingUniformModel, false, model);
+
+          gl.uniformMatrix4fv(uniformView, false, view);
+          gl.uniformMatrix4fv(uniformProjection, false, projection);
+          gl.uniformMatrix4fv(uniformModel, false, model);
+          gl.uniform3f(
+            uniformEyePosition,
+            Translator.xChange,
+            Translator.yChange,
+            3.0
+          );
+          useLights();
+
+          // render picked faces
+          if (faces.startIndices) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, selectionTexture);
+            let i = 0;
+            gl.bindVertexArray(vao);
+            for (const index of faces.startIndices) {
+              gl.drawElements(
+                gl.TRIANGLES,
+                faces.counts[i++],
+                gl.UNSIGNED_INT,
+                index * 4 // because of data size, 4 is the stride
+              );
+            }
+            gl.bindVertexArray(null);
+          }
+
+          // render model
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, mainTexture);
           gl.bindVertexArray(vao);
           gl.drawElements(gl.TRIANGLES, numTriangles, gl.UNSIGNED_INT, 0);
           gl.bindVertexArray(null);
-          pickingTexture.disableWriting(gl);
+          gl.useProgram(null);
+        };
 
-          const vertexId = pickingTexture.readPixel(
-            gl,
-            (cursorX * gl.canvas.width) / gl.canvas.clientWidth,
-            gl.canvas.height -
-              (cursorY * gl.canvas.height) / gl.canvas.clientHeight -
-              1
-          );
-
-          if (vertexId && vertexId < indices.length) {
-            faces = pLoader.calcCurrentFaces(
-              vertexId,
-              parseFloat(toleranceInput.value)
-            );
-          }
-        } else {
-          pLoader.on = false; // for de-selecting / re-selecting
-        }
-
-        gl.clearColor(0.34, 0.425, 0.6, 5);
-        gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-
-        gl.useProgram(mainProgram);
-        gl.enable(gl.DEPTH_TEST);
-
-        gl.uniformMatrix4fv(uniformView, false, view);
-        gl.uniformMatrix4fv(uniformProjection, false, projection);
-        gl.uniformMatrix4fv(uniformModel, false, model);
-        gl.uniform3f(
-          uniformEyePosition,
-          Translator.xChange,
-          Translator.yChange,
-          3.0
-        );
-        useLights();
-
-        // render picked faces
-        if (faces.startIndices) {
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, selectionTexture);
-          let i = 0;
-          gl.bindVertexArray(vao);
-          for (const index of faces.startIndices) {
-            gl.drawElements(
-              gl.TRIANGLES,
-              faces.counts[i++],
-              gl.UNSIGNED_INT,
-              index * 4 // because of data size, 4 is the stride
-            );
-          }
-          gl.bindVertexArray(null);
-        }
-
-        // render model
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, mainTexture);
-        gl.bindVertexArray(vao);
-        gl.drawElements(gl.TRIANGLES, numTriangles, gl.UNSIGNED_INT, 0);
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-      };
-
-      draw();
-    } catch (err) {
-      console.log(err);
-    }
+        draw();
+      } catch (err) {
+        console.log(err);
+      }
+    });
   };
 
   reader.readAsArrayBuffer(file);
