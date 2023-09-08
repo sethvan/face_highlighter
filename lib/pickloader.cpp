@@ -57,7 +57,6 @@ const MultiDrawer PickLoader::calcCurrentFaces( int vertexId, float tolerance )
     }
 
     MultiDrawer currentFaces;
-    int i = 1;
     std::for_each( std::next( selectedIndices.begin(), 1 ), selectedIndices.end(),
         [ & ]( const auto& md )
         {
@@ -67,16 +66,6 @@ const MultiDrawer PickLoader::calcCurrentFaces( int vertexId, float tolerance )
                 currentFaces.counts.insert( currentFaces.counts.end(), md.counts.begin(), md.counts.end() );
             }
         } );
-
-    auto maxIt = std::max_element( currentFaces.startIndices.begin(), currentFaces.startIndices.end() );
-    auto maxStartIndex = *maxIt;
-    auto maxDrawnIndex = currentFaces.counts[ std::distance( currentFaces.startIndices.begin(), maxIt ) ] + maxStartIndex;
-    std::cout << "Max index to draw: " << maxDrawnIndex << '\n';
-
-    for ( const auto& i : currentFaces.startIndices )
-    {
-        std::cout << i << '\n';
-    }
 
     return currentFaces;
 }
