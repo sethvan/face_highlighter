@@ -63,7 +63,7 @@ namespace seth_tl
         return Point( x, y, z );
     }
 
-    void parse_stl( stl_data& info, const std::string& file_string )
+    void parse_stl( std::vector<Triangle>& triangles, const std::string& file_string )
     {
         std::istringstream stl_file( file_string, std::ios::in | std::ios::binary );
         if ( !stl_file )
@@ -76,20 +76,18 @@ namespace seth_tl
         char n_triangles[ 4 ];
         stl_file.read( header_info, 80 );
         stl_file.read( n_triangles, 4 );
-        std::string h( header_info );
-        info.name = h;
 
         unsigned int* r = (unsigned int*)n_triangles;
         unsigned int num_triangles = *r;
 
-        info.triangles.reserve( num_triangles );
+        triangles.reserve( num_triangles );
         for ( unsigned int i = 0; i < num_triangles; i++ )
         {
             auto normal = parse_point( stl_file );
             auto v1 = parse_point( stl_file );
             auto v2 = parse_point( stl_file );
             auto v3 = parse_point( stl_file );
-            info.triangles.emplace_back( std::move( normal ), std::move( v1 ), std::move( v2 ), std::move( v3 ) );
+            triangles.emplace_back( std::move( normal ), std::move( v1 ), std::move( v2 ), std::move( v3 ) );
             char dummy[ 2 ];
             stl_file.read( dummy, 2 );
         }

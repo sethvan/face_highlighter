@@ -9,13 +9,13 @@
 PickLoader::PickLoader( const std::string& stl_file_content )
 {
     printf( "PickLoader constructor began!\n" );
-    seth_tl::parse_stl( info, stl_file_content );
-    seth_tl::getAdjacentFaces( info.triangles );
+    seth_tl::parse_stl( triangles, stl_file_content );
+    seth_tl::getAdjacentFaces( triangles );
     printf( "Got adjacent faces!\n" );
     loadToAssimp( stl_file_content );
     printf( "Loaded selected file to assimp!\n" );
-    model_center = seth_tl::getCenter( info.triangles );
-    scaleFactor = seth_tl::getScaleFactor( info.triangles );
+    model_center = seth_tl::getCenter( triangles );
+    scaleFactor = seth_tl::getScaleFactor( triangles );
     selectedIndices.push_back( {} ); // Do not want to use an index 0
     on = true;
     groupId = 0;
@@ -43,16 +43,16 @@ const MultiDrawer PickLoader::calcCurrentFaces( int vertexId, float tolerance )
         primId = vertexIdFoundAtIndex / 3;
     }
 
-    if ( !info.triangles[ primId ].groupId )
+    if ( !triangles[ primId ].groupId )
     {
         std::vector<unsigned int> selectedFaces;
-        seth_tl::getSelectionFaces( info.triangles, selectedFaces, primId, ++groupId, tolerance );
+        seth_tl::getSelectionFaces( triangles, selectedFaces, primId, ++groupId, tolerance );
         selectedIndices.push_back( std::move( seth_tl::getSelectionIndices( selectedFaces ) ) );
         on = true;
     }
     else if ( !on )
     {
-        selectedIndices[ info.triangles[ primId ].groupId ].enabled = !selectedIndices[ info.triangles[ primId ].groupId ].enabled;
+        selectedIndices[ triangles[ primId ].groupId ].enabled = !selectedIndices[ triangles[ primId ].groupId ].enabled;
         on = true;
     }
 
@@ -161,7 +161,7 @@ void PickLoader::clearSelection()
     selectedIndices.clear();
     selectedIndices.push_back( {} );
     groupId = 0;
-    std::for_each( info.triangles.begin(), info.triangles.end(), []( auto& triangle ) { triangle.groupId = 0; } );
+    std::for_each( triangles.begin(), triangles.end(), []( auto& triangle ) { triangle.groupId = 0; } );
 }
 
 using namespace emscripten;

@@ -54,13 +54,7 @@ namespace seth_tl
         ~Triangle() = default;
     };
 
-    struct stl_data
-    {
-        std::string name;
-        std::vector<Triangle> triangles;
-    };
-
-    void parse_stl( stl_data& info, const std::string& stl_path );
+    void parse_stl( std::vector<Triangle>& triangles, const std::string& file_string );
 
     void write_stl( std::string filename, std::vector<Triangle>& triangles );
 

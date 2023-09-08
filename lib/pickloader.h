@@ -23,7 +23,7 @@ struct MeshArrays
 class PickLoader
 {
 private:
-    seth_tl::stl_data info;
+    std::vector<seth_tl::Triangle> triangles;
     std::vector<MultiDrawer> selectedIndices;
     seth_tl::Point model_center;
     float scaleFactor;
