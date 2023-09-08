@@ -1,6 +1,8 @@
 #include "pickloader.h"
+#include "faces.h"
 #include <algorithm>
 #include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 
@@ -9,8 +11,7 @@ PickLoader::PickLoader( const std::string& stl_file_content )
     printf( "PickLoader constructor began!\n" );
     seth_tl::parse_stl( info, stl_file_content );
     seth_tl::getAdjacentFaces( info.triangles );
-    printf( "Got adjacent faces!" );
-    std::cout << ", size: " << info.triangles.size() << '\n';
+    printf( "Got adjacent faces!\n" );
     loadToAssimp( stl_file_content );
     printf( "Loaded selected file to assimp!\n" );
     model_center = seth_tl::getCenter( info.triangles );
@@ -33,12 +34,12 @@ float PickLoader::getScaleFactor() const
 
 const MultiDrawer PickLoader::calcCurrentFaces( int vertexId, float tolerance )
 {
-    auto it = std::find( mesh_arrays.front().indices.begin(), mesh_arrays.front().indices.end(), vertexId );
+    auto it = std::find( mesh_arrays.indices.begin(), mesh_arrays.indices.end(), vertexId );
     int primId = 0;
 
-    if ( it != mesh_arrays.front().indices.end() )
+    if ( it != mesh_arrays.indices.end() )
     {
-        auto vertexIdFoundAtIndex = std::distance( mesh_arrays.front().indices.begin(), it );
+        auto vertexIdFoundAtIndex = std::distance( mesh_arrays.indices.begin(), it );
         primId = vertexIdFoundAtIndex / 3;
     }
 
@@ -66,22 +67,33 @@ const MultiDrawer PickLoader::calcCurrentFaces( int vertexId, float tolerance )
                 currentFaces.counts.insert( currentFaces.counts.end(), md.counts.begin(), md.counts.end() );
             }
         } );
+
+    auto maxIt = std::max_element( currentFaces.startIndices.begin(), currentFaces.startIndices.end() );
+    auto maxStartIndex = *maxIt;
+    auto maxDrawnIndex = currentFaces.counts[ std::distance( currentFaces.startIndices.begin(), maxIt ) ] + maxStartIndex;
+    std::cout << "Max index to draw: " << maxDrawnIndex << '\n';
+
+    for ( const auto& i : currentFaces.startIndices )
+    {
+        std::cout << i << '\n';
+    }
+
     return currentFaces;
 }
 
 val PickLoader::getVertices() const
 {
-    return val( typed_memory_view( mesh_arrays.front().vertices.size(), mesh_arrays.front().vertices.data() ) );
+    return val( typed_memory_view( mesh_arrays.vertices.size(), mesh_arrays.vertices.data() ) );
 }
 
 val PickLoader::getIndices() const
 {
-    return val( typed_memory_view( mesh_arrays.front().indices.size(), mesh_arrays.front().indices.data() ) );
+    return val( typed_memory_view( mesh_arrays.indices.size(), mesh_arrays.indices.data() ) );
 }
 
 int PickLoader::getNumTriangles() const
 {
-    return mesh_arrays.front().indices.size();
+    return mesh_arrays.indices.size();
 }
 
 void PickLoader::loadToAssimp( const std::string& file_content )
@@ -115,24 +127,23 @@ void PickLoader::loadNode( aiNode* node, const aiScene* scene )
 
 void PickLoader::loadMesh( aiMesh* mesh, const aiScene* scene )
 {
-    mesh_arrays.push_back( {} );
 
     for ( size_t i = 0; i < mesh->mNumVertices; i++ )
     {
-        mesh_arrays.back().vertices.insert(
-            mesh_arrays.back().vertices.end(), { mesh->mVertices[ i ].x, mesh->mVertices[ i ].y, mesh->mVertices[ i ].z } );
+        mesh_arrays.vertices.insert(
+            mesh_arrays.vertices.end(), { mesh->mVertices[ i ].x, mesh->mVertices[ i ].y, mesh->mVertices[ i ].z } );
 
         if ( mesh->mTextureCoords[ 0 ] )
         {
-            mesh_arrays.back().vertices.insert(
-                mesh_arrays.back().vertices.end(), { mesh->mTextureCoords[ 0 ][ i ].x, mesh->mTextureCoords[ 0 ][ i ].y } );
+            mesh_arrays.vertices.insert(
+                mesh_arrays.vertices.end(), { mesh->mTextureCoords[ 0 ][ i ].x, mesh->mTextureCoords[ 0 ][ i ].y } );
         }
         else
         {
-            mesh_arrays.back().vertices.insert( mesh_arrays.back().vertices.end(), { 0.0f, 0.0f } );
+            mesh_arrays.vertices.insert( mesh_arrays.vertices.end(), { 0.0f, 0.0f } );
         }
-        mesh_arrays.back().vertices.insert(
-            mesh_arrays.back().vertices.end(), { -mesh->mNormals[ i ].x, -mesh->mNormals[ i ].y, -mesh->mNormals[ i ].z } );
+        mesh_arrays.vertices.insert(
+            mesh_arrays.vertices.end(), { -mesh->mNormals[ i ].x, -mesh->mNormals[ i ].y, -mesh->mNormals[ i ].z } );
     }
 
     for ( size_t i = 0; i < mesh->mNumFaces; i++ )
@@ -140,7 +151,7 @@ void PickLoader::loadMesh( aiMesh* mesh, const aiScene* scene )
         aiFace face = mesh->mFaces[ i ];
         for ( size_t j = 0; j < face.mNumIndices; j++ )
         {
-            mesh_arrays.back().indices.push_back( face.mIndices[ j ] );
+            mesh_arrays.indices.push_back( face.mIndices[ j ] );
         }
     }
 }

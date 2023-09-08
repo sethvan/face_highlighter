@@ -27,7 +27,7 @@ private:
     std::vector<MultiDrawer> selectedIndices;
     seth_tl::Point model_center;
     float scaleFactor;
-    std::vector<MeshArrays> mesh_arrays;
+    MeshArrays mesh_arrays;
     void loadToAssimp( const std::string& stl_file_content );
     void loadNode( aiNode* node, const aiScene* scene );
     void loadMesh( aiMesh* mesh, const aiScene* scene );

@@ -23,11 +23,20 @@ namespace seth_tl
         glm::vec3 normalizedNormal2 = glm::normalize( normal2 );
 
         float dotProduct = glm::dot( normalizedNormal1, normalizedNormal2 );
-        float angle = glm::acos( dotProduct );
+        // Ensure the dot product is within the valid range [-1, 1]
+        if ( dotProduct >= -1.0f && dotProduct <= 1.0f )
+        {
+            // Calculate the angle
+            float angle = glm::acos( dotProduct );
 
-        // Convert angle from radians to degrees
-        angle = glm::degrees( angle );
-        return angle;
+            // Convert angle from radians to degrees
+            angle = glm::degrees( angle );
+            return angle;
+        }
+        else
+        {
+            return 0.0f;
+        }
     }
 
     std::map<seth_tl::Point, std::set<unsigned int>> getFacesPerPoint( const std::vector<seth_tl::Triangle>& triangles )
@@ -90,8 +99,8 @@ namespace seth_tl
                 [ & ]( unsigned int adjacent )
                 {
                     if ( !triangles[ adjacent ].groupId
-                        && std::fabs( angleBetweenNormals( triangles[ currentFace ].glmNormal, triangles[ adjacent ].glmNormal ) )
-                            < tolerance )
+                        && ( std::fabs( angleBetweenNormals( triangles[ currentFace ].glmNormal, triangles[ adjacent ].glmNormal ) )
+                            < tolerance ) )
                     {
                         triangles[ adjacent ].groupId = groupId;
                         selectedFaces.push_back( adjacent );
