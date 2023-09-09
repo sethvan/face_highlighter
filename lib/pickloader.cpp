@@ -9,11 +9,13 @@
 PickLoader::PickLoader( const std::string& stl_file_content )
 {
     printf( "PickLoader constructor began!\n" );
-    seth_tl::parse_stl( triangles, stl_file_content );
-    seth_tl::getAdjacentFaces( triangles );
-    printf( "Got adjacent faces!\n" );
     loadToAssimp( stl_file_content );
     printf( "Loaded selected file to assimp!\n" );
+    populateTriangleVec();
+    printf( "Populated triangles vector!\n" );
+    std::cout << "Size of vector: " << triangles.size() << '\n';
+    seth_tl::getAdjacentFaces( triangles );
+    printf( "Got adjacent faces!\n" );
     model_center = seth_tl::getCenter( triangles );
     scaleFactor = seth_tl::getScaleFactor( triangles );
     selectedIndices.push_back( {} ); // Do not want to use an index 0
@@ -22,7 +24,7 @@ PickLoader::PickLoader( const std::string& stl_file_content )
     printf( "PickLoader constructor finished!\n" );
 }
 
-seth_tl::Point PickLoader::getModelCenter() const
+std::array<float, 3> PickLoader::getModelCenter() const
 {
     return model_center;
 }
@@ -89,8 +91,8 @@ void PickLoader::loadToAssimp( const std::string& file_content )
 {
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFileFromMemory( file_content.data(), file_content.length(),
-        aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices, "stl" );
+    const aiScene* scene = importer.ReadFileFromMemory(
+        file_content.data(), file_content.length(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals, "stl" );
 
     if ( !scene )
     {
@@ -151,6 +153,30 @@ void PickLoader::clearSelection()
     selectedIndices.push_back( {} );
     groupId = 0;
     std::for_each( triangles.begin(), triangles.end(), []( auto& triangle ) { triangle.groupId = 0; } );
+}
+
+void PickLoader::populateTriangleVec()
+{
+    size_t stride = 8;
+    for ( size_t i = 0; i < mesh_arrays.indices.size(); i += 3 )
+    {
+        auto v1Base = mesh_arrays.indices[ i ] * stride;
+        auto v1xIndex = v1Base;
+        auto v1yIndex = v1Base + 1;
+        auto v1zIndex = v1Base + 2;
+        auto v2Base = mesh_arrays.indices[ i + 1 ] * stride;
+        auto v2xIndex = v2Base;
+        auto v2yIndex = v2Base + 1;
+        auto v2zIndex = v2Base + 2;
+        auto v3Base = mesh_arrays.indices[ i + 2 ] * stride;
+        auto v3xIndex = v3Base;
+        auto v3yIndex = v3Base + 1;
+        auto v3zIndex = v3Base + 2;
+        triangles.emplace_back(
+            seth_tl::Point( mesh_arrays.vertices[ v1xIndex ], mesh_arrays.vertices[ v1yIndex ], mesh_arrays.vertices[ v1zIndex ] ),
+            seth_tl::Point( mesh_arrays.vertices[ v2xIndex ], mesh_arrays.vertices[ v2yIndex ], mesh_arrays.vertices[ v2zIndex ] ),
+            seth_tl::Point( mesh_arrays.vertices[ v3xIndex ], mesh_arrays.vertices[ v3yIndex ], mesh_arrays.vertices[ v3zIndex ] ) );
+    }
 }
 
 using namespace emscripten;

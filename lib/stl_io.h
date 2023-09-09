@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 #include <string>
 #include <vector>
+#include <array>
 
 namespace seth_tl
 {
@@ -12,17 +13,11 @@ namespace seth_tl
 
     struct Point
     {
-        float x;
-        float y;
-        float z;
+        const float& x;
+        const float& y;
+        const float& z;
 
-        Point()
-            : x( 0.0f )
-            , y( 0.0f )
-            , z( 0.0f )
-        {
-        }
-        Point( float xp, float yp, float zp )
+        Point( const float& xp, const float& yp, const float& zp )
             : x( xp )
             , y( yp )
             , z( zp )
@@ -35,30 +30,17 @@ namespace seth_tl
 
     struct Triangle
     {
-        Point normal;
-        Point v1;
-        Point v2;
-        Point v3;
+        const Point v1;
+        const Point v2;
+        const Point v3;
         unsigned int groupId;
-        std::vector<int> adjacentFaces;
         glm::vec3 glmNormal;
-        Triangle( Point normalp, Point v1p, Point v2p, Point v3p )
-            : normal( normalp )
-            , v1( v1p )
-            , v2( v2p )
-            , v3( v3p )
-            , groupId( 0 )
-            , glmNormal( glm::vec3( normalp.x, normalp.y, normalp.z ) ) // for faces.cpp
-        {
-        }
+        std::vector<int> adjacentFaces;
+        Triangle( Point v1p, Point v2p, Point v3p );
         ~Triangle() = default;
     };
 
-    void parse_stl( std::vector<Triangle>& triangles, const std::string& file_string );
-
-    void write_stl( std::string filename, std::vector<Triangle>& triangles );
-
-    seth_tl::Point getCenter( std::vector<seth_tl::Triangle> triangles );
+    std::array<float, 3> getCenter( std::vector<seth_tl::Triangle> triangles );
 
     float getScaleFactor( std::vector<seth_tl::Triangle> triangles );
 

@@ -8,10 +8,10 @@ namespace seth_tl
     // this function solely exists for stl files with poor normals provided, should rarely be needed
     glm::vec3 getNormal( const glm::vec3& a, const glm::vec3& b, const glm::vec3& c )
     {
-        // Calculate normal by cross product to get perpendicular angle to two lines of Triangle
-        glm::vec3 v1( a.x - b.x, a.y - b.y, a.z - b.z );
-        glm::vec3 v2( c.x - b.x, c.y - b.y, c.z - b.z );
-        glm::vec3 normal = glm::cross( v1, v2 );
+        // Calculate normal by cross product of two edges of the triangle
+        glm::vec3 edge1 = b - a;
+        glm::vec3 edge2 = c - a;
+        glm::vec3 normal = glm::cross( edge1, edge2 );
         normal = glm::normalize( normal );
         return normal;
     }

@@ -25,7 +25,7 @@ class PickLoader
 private:
     std::vector<seth_tl::Triangle> triangles;
     std::vector<MultiDrawer> selectedIndices;
-    seth_tl::Point model_center;
+    std::array<float, 3> model_center;
     float scaleFactor;
     MeshArrays mesh_arrays;
     void loadToAssimp( const std::string& stl_file_content );
@@ -41,7 +41,8 @@ public:
     PickLoader& operator=( const PickLoader&& rhs ) = delete;
     ~PickLoader() = default;
 
-    seth_tl::Point getModelCenter() const;
+    void populateTriangleVec();
+    std::array<float, 3> getModelCenter() const;
     float getScaleFactor() const;
     const MultiDrawer calcCurrentFaces( int vertexId, float tolerance );
     bool on;

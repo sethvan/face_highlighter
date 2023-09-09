@@ -1,4 +1,5 @@
 #include "stl_io.h"
+#include "faces.h"
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -15,12 +16,13 @@
 
 namespace seth_tl
 {
-    EMSCRIPTEN_BINDINGS( my_point )
+
+    EMSCRIPTEN_BINDINGS( my_bindings )
     {
-        emscripten::value_array<seth_tl::Point>( "Point" )
-            .element( &seth_tl::Point::x )
-            .element( &seth_tl::Point::y )
-            .element( &seth_tl::Point::z );
+        emscripten::value_array<std::array<float, 3>>( "array_float_3" )
+            .element( emscripten::index<0>() )
+            .element( emscripten::index<1>() )
+            .element( emscripten::index<2>() );
     }
 
     bool Point::operator==( const Point& rhs ) const
@@ -47,104 +49,17 @@ namespace seth_tl
         }
     }
 
-    float parse_float( std::istringstream& s )
+    Triangle::Triangle( Point v1p, Point v2p, Point v3p )
+        : v1( std::move( v1p ) )
+        , v2( std::move( v2p ) )
+        , v3( std::move( v3p ) )
+        , groupId( 0 )
     {
-        char f_buf[ sizeof( float ) ];
-        s.read( f_buf, 4 );
-        float* fptr = (float*)f_buf;
-        return *fptr;
-    }
-
-    Point parse_point( std::istringstream& s )
-    {
-        float x = parse_float( s );
-        float y = parse_float( s );
-        float z = parse_float( s );
-        return Point( x, y, z );
-    }
-
-    void parse_stl( std::vector<Triangle>& triangles, const std::string& file_string )
-    {
-        std::istringstream stl_file( file_string, std::ios::in | std::ios::binary );
-        if ( !stl_file )
-        {
-            std::cout << "ERROR: COULD NOT READ FILE" << std::endl;
-            assert( false );
-        }
-
-        char header_info[ 80 ] = "";
-        char n_triangles[ 4 ];
-        stl_file.read( header_info, 80 );
-        stl_file.read( n_triangles, 4 );
-
-        unsigned int* r = (unsigned int*)n_triangles;
-        unsigned int num_triangles = *r;
-
-        triangles.reserve( num_triangles );
-        for ( unsigned int i = 0; i < num_triangles; i++ )
-        {
-            auto normal = parse_point( stl_file );
-            auto v1 = parse_point( stl_file );
-            auto v2 = parse_point( stl_file );
-            auto v3 = parse_point( stl_file );
-            triangles.emplace_back( std::move( normal ), std::move( v1 ), std::move( v2 ), std::move( v3 ) );
-            char dummy[ 2 ];
-            stl_file.read( dummy, 2 );
-        }
-    }
-
-    void write_stl( std::string filename, std::vector<Triangle>& triangles )
-    {
-
-        // binary file
-        std::string header_info = "solid " + filename + "-output";
-        char head[ 80 ];
-        std::strncpy( head, header_info.c_str(), sizeof( head ) - 1 );
-        char attribute[ 2 ] = "0";
-        unsigned long nTriLong = triangles.size();
-
-        filename.append( ".stl" );
-
-        std::ofstream myfile( filename.c_str(), std::ios::out | std::ios::binary );
-        if ( !myfile.is_open() )
-        {
-            throw std::runtime_error( std::string( "Failed to open file: " ) + filename );
-        }
-        myfile.write( head, sizeof( head ) );
-        myfile.write( (char*)&nTriLong, 4 );
-
-        // write down every Triangle
-        for ( std::vector<Triangle>::iterator it = triangles.begin(); it != triangles.end(); it++ )
-        {
-            // normal vector coordinates
-
-            myfile.write( (char*)&it->normal.x, 4 );
-            myfile.write( (char*)&it->normal.y, 4 );
-            myfile.write( (char*)&it->normal.z, 4 );
-
-            // p1 coordinates
-            myfile.write( (char*)&it->v1.x, 4 );
-            myfile.write( (char*)&it->v1.y, 4 );
-            myfile.write( (char*)&it->v1.z, 4 );
-
-            // p2 coordinates
-            myfile.write( (char*)&it->v2.x, 4 );
-            myfile.write( (char*)&it->v2.y, 4 );
-            myfile.write( (char*)&it->v2.z, 4 );
-
-            // p3 coordinates
-            myfile.write( (char*)&it->v3.x, 4 );
-            myfile.write( (char*)&it->v3.y, 4 );
-            myfile.write( (char*)&it->v3.z, 4 );
-
-            myfile.write( attribute, 2 );
-        }
-
-        myfile.close();
+        glmNormal = seth_tl::getNormal( glm::vec3( v1.x, v1.y, v1.z ), glm::vec3( v2.x, v2.y, v2.z ), glm::vec3( v3.x, v3.y, v3.z ) );
     }
 
     // https://stackoverflow.com/questions/2083771/a-method-to-calculate-the-centre-of-mass-from-a-stl-stereo-lithography-file
-    seth_tl::Point getCenter( std::vector<seth_tl::Triangle> triangles )
+    std::array<float, 3> getCenter( std::vector<seth_tl::Triangle> triangles )
     {
         double totalVolume = 0, currentVolume;
         double xCenter = 0, yCenter = 0, zCenter = 0;
@@ -164,7 +79,8 @@ namespace seth_tl
             zCenter += ( ( triangles[ i ].v1.z + triangles[ i ].v2.z + triangles[ i ].v3.z ) / 4 ) * currentVolume;
         }
 
-        seth_tl::Point center( xCenter / totalVolume, yCenter / totalVolume, zCenter / totalVolume );
+        std::array<float, 3> center = { static_cast<float>( xCenter / totalVolume ), static_cast<float>( yCenter / totalVolume ),
+            static_cast<float>( zCenter / totalVolume ) };
         return center;
     }
 
@@ -204,5 +120,4 @@ namespace seth_tl
         float length = std::max( std::max( max_x - min_x, max_y - min_y ), max_z - min_z );
         return 2.0f / length;
     }
-
 }
