@@ -1,6 +1,7 @@
 # face_highlighter
 
 WebGL app for selecting and highlighting faces of models in STL format
+To try out go to [sethvan.pro/face_highlighter/public](https://sethvan.pro/face_highlighter/public/)
 
 It is meant to be integrated into a CAD tool. It will be used to select and save faces of 3D models of STL file format. I originally did this in OpenGL and then redid it in WebGL as it will be implemented as part of a browser based tool using REACT ( see [REACT component version](https://github.com/sethvan/face_highlighter_REACT) ).  
 
